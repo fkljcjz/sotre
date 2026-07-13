@@ -1,0 +1,6 @@
+{
+  "name": "쿠팡 파트너스 쇼핑몰",
+  "description": "원하는 상품을 빠르게 검색하고, 쿠팡 최저가 및 로켓배송 상품을 간편하게 비교하여 쇼핑을 도와주는 쿠팡 파트너스 제휴 마케팅 사이트입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
