@@ -4,8 +4,24 @@
  */
 
 import { Product } from './types';
+import benqMonitorImg from './assets/images/benq_monitor_1784038159423.jpg';
 
 export const DEFAULT_PRODUCTS: Product[] = [
+  {
+    id: 'benq_monitor',
+    title: '01 벤큐 프리미엄 모니터',
+    category: 'digital',
+    originalPrice: 199000,
+    salePrice: 159000,
+    discountRate: 20,
+    coupangUrl: 'https://link.coupang.com/a/fnPPvTMbUy',
+    imageUrl: benqMonitorImg,
+    description: '장시간 모니터를 사용하는 분들을 위한 최고의 시력 보호 모니터! 벤큐만의 독자적인 B.I. 테크놀로지가 주변 밝기를 감지하여 화면 밝기를 자동 조절해 눈의 피로를 최소화합니다. 슬림 베젤 디자인과 100Hz의 부드러운 주사율로 끊김 없는 멀티미디어 감상 및 웹 서핑 환경을 선사합니다.',
+    isRocket: true,
+    isBest: true,
+    tags: ['벤큐', '모니터', '시력보호', '가성비모니터', '사무용모니터'],
+    createdAt: '2026-07-14T00:00:00Z'
+  },
   {
     id: '1',
     title: 'Apple 2024 iPad Air 11형 M2칩 (Liquid Retina 디스플레이, 128GB, Wi-Fi)',

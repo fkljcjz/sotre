@@ -53,14 +53,15 @@ const PRESET_IMAGES = [
 ];
 
 export default function App() {
-  // Products State (Loaded from localStorage, starts empty by default per user request)
+  // Products State (Loaded from localStorage, always ensuring the newly requested BenQ monitor is present)
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('coupang_products');
+    let loadedProducts: Product[] = [];
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Product[];
-        // Filter out default preset products (ids '1' to '9') to ensure a clean starting slate
-        return parsed.filter(p => {
+        // Filter out old default preset products (ids '1' to '9') to ensure a clean starting slate
+        loadedProducts = parsed.filter(p => {
           const idNum = parseInt(p.id, 10);
           return isNaN(idNum) || idNum < 1 || idNum > 9;
         });
@@ -68,7 +69,33 @@ export default function App() {
         console.error('Failed to parse products', e);
       }
     }
-    return []; // Start with an empty list so the user can register new products
+
+    // Always guarantee the BenQ monitor product exists in the list and holds the latest default metadata
+    const benqFromDefaults = DEFAULT_PRODUCTS.find(p => p.id === 'benq_monitor');
+    if (benqFromDefaults) {
+      const hasBenq = loadedProducts.some(p => p.id === 'benq_monitor');
+      if (hasBenq) {
+        loadedProducts = loadedProducts.map(p => {
+          if (p.id === 'benq_monitor') {
+            return {
+              ...p,
+              title: benqFromDefaults.title,
+              imageUrl: benqFromDefaults.imageUrl,
+              coupangUrl: benqFromDefaults.coupangUrl,
+              originalPrice: benqFromDefaults.originalPrice,
+              salePrice: benqFromDefaults.salePrice,
+              discountRate: benqFromDefaults.discountRate,
+              isRocket: benqFromDefaults.isRocket,
+              isBest: benqFromDefaults.isBest,
+            };
+          }
+          return p;
+        });
+      } else {
+        loadedProducts = [benqFromDefaults, ...loadedProducts];
+      }
+    }
+    return loadedProducts;
   });
 
   // Profile Settings State
@@ -498,7 +525,11 @@ export default function App() {
     <motion.div
       layout
       key={product.id}
-      onClick={() => setSelectedProduct(product)}
+      onClick={() => {
+        if (product.coupangUrl) {
+          window.open(product.coupangUrl, '_blank', 'noopener,noreferrer');
+        }
+      }}
       className="bg-white rounded-2xl overflow-hidden border border-purple-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-300 flex flex-col relative cursor-pointer group"
     >
       {/* Admin controls */}
@@ -530,32 +561,13 @@ export default function App() {
           referrerPolicy="no-referrer"
           loading="lazy"
         />
-        
-        {/* Small rocket badge */}
-        {product.isRocket && (
-          <span className="absolute bottom-1 right-1 bg-blue-600 text-[7px] font-black text-white px-1 py-0.5 rounded shadow-sm scale-90 origin-bottom-right">
-            🚀로켓
-          </span>
-        )}
-
-        {/* Discount rate sticker */}
-        {product.discountRate > 0 && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-[8px] font-black px-1 py-0.5 rounded-full scale-90 origin-top-right">
-            -{product.discountRate}%
-          </span>
-        )}
       </div>
 
       {/* Text body */}
-      <div className="p-1.5 flex-1 flex flex-col justify-between text-center min-h-[58px]">
-        <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-2 leading-tight tracking-tight mt-0.5 select-none">
+      <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[46px]">
+        <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-2 leading-tight tracking-tight select-none">
           {product.title}
         </h4>
-        <div className="mt-1 flex flex-col items-center justify-center">
-          <span className="text-[10px] font-black text-purple-700 leading-none">
-            {product.salePrice.toLocaleString()}원
-          </span>
-        </div>
       </div>
     </motion.div>
   );
@@ -694,17 +706,17 @@ export default function App() {
         {/* Sticky Legal Banner Warning Header with Purple Marquee Design */}
         <div 
           onClick={handleNoticeClick}
-          className="bg-[#2E1044] text-purple-100 text-[10px] py-2.5 sticky top-0 z-20 overflow-hidden w-full cursor-pointer select-none border-b border-purple-950/50 flex items-center shadow-md"
+          className="bg-[#2E1044] text-purple-100 text-xs py-3.5 sticky top-0 z-20 overflow-hidden w-full cursor-pointer select-none border-b border-purple-950/50 flex items-center shadow-md"
           title="파트너스 알림 (10번 연속 클릭 시 관리자 설정)"
         >
           <div className="w-full overflow-hidden relative flex">
             <div className="animate-marquee-seamless flex shrink-0 items-center">
-              <span className="font-bold tracking-wide pr-16">
+              <span className="font-extrabold tracking-wide pr-16">
                 📢 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
               </span>
             </div>
             <div className="animate-marquee-seamless flex shrink-0 items-center" aria-hidden="true">
-              <span className="font-bold tracking-wide pr-16">
+              <span className="font-extrabold tracking-wide pr-16">
                 📢 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
               </span>
             </div>
@@ -791,14 +803,6 @@ export default function App() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Guide Banner */}
-          <div className="mx-4 p-3 bg-purple-50 rounded-2xl border border-purple-100 text-left space-y-1">
-            <span className="text-[10px] font-black text-purple-900 block">💡 쇼핑 꿀팁 가이드</span>
-            <p className="text-[9px] text-slate-600 leading-normal">
-              원하는 상품의 카드를 탭하여 자세한 추천 사유를 확인하세요! 모든 링크는 쿠팡 파트너스 공식 연결망으로 연결되어 있으며, 쿠팡 공식앱의 실시간 최저가와 100% 동일한 안전한 결제를 보증합니다.
-            </p>
           </div>
 
           {/* Footer legal disclaimer */}
@@ -921,16 +925,6 @@ export default function App() {
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                  {selectedProduct.discountRate > 0 && (
-                    <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-black px-3 py-1.5 rounded-full shadow-md">
-                      {selectedProduct.discountRate}% 특가 할인
-                    </span>
-                  )}
-                  {selectedProduct.isRocket && (
-                    <span className="absolute bottom-4 left-4 bg-blue-600 text-white text-xs font-extrabold px-3 py-1 rounded shadow">
-                      🚀 쿠팡 로켓배송 보장
-                    </span>
-                  )}
                 </div>
 
                 {/* Details info body */}
@@ -962,27 +956,7 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="border-t border-b border-slate-100 py-4 space-y-2">
-                      <div className="flex justify-between items-center text-xs text-slate-400">
-                        <span>쿠팡 정상 공급가</span>
-                        <span className="line-through">{selectedProduct.originalPrice.toLocaleString()}원</span>
-                      </div>
-                      <div className="flex justify-between items-end">
-                        <span className="text-xs font-bold text-slate-600">제휴 전용 특가</span>
-                        <div className="flex items-baseline space-x-1.5">
-                          <span className="text-red-500 font-black text-xl">{selectedProduct.discountRate}%</span>
-                          <span className="text-slate-950 font-black text-2xl">
-                            {selectedProduct.salePrice.toLocaleString()}원
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 text-[11px] text-emerald-600 font-bold bg-emerald-50 px-3 py-1.5 rounded-lg">
-                        <span>현재 세일 혜택액 (총 절약)</span>
-                        <span>-{(selectedProduct.originalPrice - selectedProduct.salePrice).toLocaleString()}원 할인 적용 중</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
+                    <div className="space-y-1 pt-2">
                       <h4 className="text-xs font-bold text-slate-400">MD 추천 및 상세 특징</h4>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         {selectedProduct.description || '이 상품은 실용성과 높은 가성비를 고루 갖춘 특별 기획 추천 상품입니다.'}
