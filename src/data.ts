@@ -5,6 +5,7 @@
 
 import { Product } from './types';
 import benqMonitorImg from './assets/images/benq_monitor_1784038159423.jpg';
+import alubarPowerstripImg from './assets/images/alubar_powerstrip_1784398375144.jpg';
 
 export const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -21,6 +22,21 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isBest: true,
     tags: ['벤큐', '모니터', '시력보호', '가성비모니터', '사무용모니터'],
     createdAt: '2026-07-14T00:00:00Z'
+  },
+  {
+    id: 'alubar_powerstrip',
+    title: '02 알루바프로 멀티탭',
+    category: 'digital',
+    originalPrice: 45000,
+    salePrice: 35900,
+    discountRate: 20,
+    coupangUrl: 'https://link.coupang.com/a/fuEMWdH7f2',
+    imageUrl: alubarPowerstripImg,
+    description: '알루미늄 바디로 제작되어 탁월한 내구성과 세련된 안전성을 자랑하는 알루바프로 프리미엄 개별 멀티탭! 먼지 유입을 막아주고 오작동을 예방하는 개별 보호 커버 스위치가 탑재되어 화재 위험으로부터 소중한 기기를 안전하게 보호합니다. 세련된 매트 블랙 디자인으로 깔끔한 데스크테리어를 완성해보세요.',
+    isRocket: true,
+    isBest: true,
+    tags: ['알루바프로', '멀티탭', '안전멀티탭', '알루미늄멀티탭', '데스크테리어'],
+    createdAt: '2026-07-15T00:00:00Z'
   },
   {
     id: '1',

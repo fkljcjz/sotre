@@ -70,29 +70,31 @@ export default function App() {
       }
     }
 
-    // Always guarantee the BenQ monitor product exists in the list and holds the latest default metadata
-    const benqFromDefaults = DEFAULT_PRODUCTS.find(p => p.id === 'benq_monitor');
-    if (benqFromDefaults) {
-      const hasBenq = loadedProducts.some(p => p.id === 'benq_monitor');
-      if (hasBenq) {
+    // Always guarantee custom non-numeric default products exist in the list and hold the latest default metadata
+    const nonNumericDefaults = DEFAULT_PRODUCTS.filter(p => isNaN(parseInt(p.id, 10)));
+    
+    // We reverse it to maintain their original relative order when prepending
+    for (const defaultProduct of [...nonNumericDefaults].reverse()) {
+      const hasProduct = loadedProducts.some(p => p.id === defaultProduct.id);
+      if (hasProduct) {
         loadedProducts = loadedProducts.map(p => {
-          if (p.id === 'benq_monitor') {
+          if (p.id === defaultProduct.id) {
             return {
               ...p,
-              title: benqFromDefaults.title,
-              imageUrl: benqFromDefaults.imageUrl,
-              coupangUrl: benqFromDefaults.coupangUrl,
-              originalPrice: benqFromDefaults.originalPrice,
-              salePrice: benqFromDefaults.salePrice,
-              discountRate: benqFromDefaults.discountRate,
-              isRocket: benqFromDefaults.isRocket,
-              isBest: benqFromDefaults.isBest,
+              title: defaultProduct.title,
+              imageUrl: defaultProduct.imageUrl,
+              coupangUrl: defaultProduct.coupangUrl,
+              originalPrice: defaultProduct.originalPrice,
+              salePrice: defaultProduct.salePrice,
+              discountRate: defaultProduct.discountRate,
+              isRocket: defaultProduct.isRocket,
+              isBest: defaultProduct.isBest,
             };
           }
           return p;
         });
       } else {
-        loadedProducts = [benqFromDefaults, ...loadedProducts];
+        loadedProducts = [defaultProduct, ...loadedProducts];
       }
     }
     return loadedProducts;
@@ -712,12 +714,12 @@ export default function App() {
           <div className="w-full overflow-hidden relative flex">
             <div className="animate-marquee-seamless flex shrink-0 items-center">
               <span className="font-extrabold tracking-wide pr-16">
-                📢 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
+                📢 쿠팡 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
               </span>
             </div>
             <div className="animate-marquee-seamless flex shrink-0 items-center" aria-hidden="true">
               <span className="font-extrabold tracking-wide pr-16">
-                📢 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
+                📢 쿠팡 파트너스 활동의 일환으로 구매시 일정액의 수수료를 제공 받습니다.
               </span>
             </div>
           </div>
@@ -765,18 +767,13 @@ export default function App() {
 
           {/* Special Custom Link/Banner Placeholder Box */}
           {!searchQuery && (
-            <div className="px-4 -mt-2">
-              <div 
-                className="bg-white rounded-2xl p-3.5 border border-dashed border-purple-200/80 shadow-sm hover:shadow-md hover:border-purple-300 transition duration-300 flex flex-col items-center justify-center text-center cursor-pointer min-h-[70px]"
-                title="배너 및 커스텀 링크 영역"
+            <div className="px-4 -mt-1 flex justify-center">
+              <button 
+                onClick={() => window.open('https://link.coupang.com/a/fnPPvTMbUy', '_blank', 'noopener,noreferrer')}
+                className="w-full max-w-[220px] bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer"
               >
-                <span className="text-[10.5px] font-extrabold text-purple-500 flex items-center gap-1">
-                  📢 배너 및 추천 링크 영역
-                </span>
-                <span className="text-[8.5px] font-medium text-slate-400 mt-1">
-                  여기에 이벤트 정보나 홍보하고 싶은 외부 웹사이트 링크를 자유롭게 추가해 보세요.
-                </span>
-              </div>
+                <span>✨ 최고의 상품 10개 보러가기</span>
+              </button>
             </div>
           )}
 
