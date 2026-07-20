@@ -772,7 +772,7 @@ export default function App() {
                 </div>
               </motion.button>
               <p className="text-[11px] font-extrabold text-[#2E1044]/90 mt-2.5 tracking-tight flex items-center gap-1 select-none">
-                ✨ 유명인들이 추천하는 아이템
+                🔥 요즘 가장 인기 있는 아이템
               </p>
             </div>
           )}
