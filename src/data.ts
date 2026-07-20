@@ -5,7 +5,9 @@
 
 import { Product } from './types';
 import benqMonitorImg from './assets/images/benq_monitor_1784038159423.jpg';
-import alubarPowerstripImg from './assets/images/alubar_powerstrip_1784398375144.jpg';
+import alubarPowerstripImg from './assets/images/alubar_powerstrip_perfect_replica_1784489797658.jpg';
+import toiletPaperRollsImg from './assets/images/zalpullineun_tissue_exact_1784479641126.jpg';
+import flyingSpinnerBallImg from './assets/images/flying_spinner_ball_1784529305695.jpg';
 
 export const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -37,6 +39,36 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isBest: true,
     tags: ['알루바프로', '멀티탭', '안전멀티탭', '알루미늄멀티탭', '데스크테리어'],
     createdAt: '2026-07-15T00:00:00Z'
+  },
+  {
+    id: 'jalpullineun_tissue',
+    title: '03 잘풀리는집 3겹 화장지',
+    category: 'food',
+    originalPrice: 28900,
+    salePrice: 22900,
+    discountRate: 20,
+    coupangUrl: 'https://link.coupang.com/a/fwqv2S0nvw',
+    imageUrl: toiletPaperRollsImg,
+    description: '도톰하고 부드러운 3겹 구조로 피부 자극을 줄인 잘풀리는집 오리지널 맥스 소프트 화장지! 100% 천연펄프 원단에 무향, 무인쇄, 무형광으로 온 가족이 안심하고 사용할 수 있습니다. 탄탄한 4D 픽셀 엠보싱으로 흡수력이 뛰어나며, 30롤 대용량 패키지로 실용성을 더했습니다.',
+    isRocket: true,
+    isBest: true,
+    tags: ['잘풀리는집', '롤화장지', '3겹화장지', '생필품', '천연펄프'],
+    createdAt: '2026-07-19T00:00:00Z'
+  },
+  {
+    id: 'flying_spinner_ball',
+    title: '04 우주비행 플라잉 스피너볼',
+    category: 'other',
+    originalPrice: 29800,
+    salePrice: 19800,
+    discountRate: 33,
+    coupangUrl: 'https://link.coupang.com/a/fxfvcVSwcC',
+    imageUrl: flyingSpinnerBallImg,
+    description: '공중에 띄워 주고받으며 노는 신개념 모터라이즈 드론 플라잉 스피너볼! 가볍고 유연하며 복원력이 뛰어난 친환경 ABS 소재로 부딪혀도 안심하고 안전하게 사용할 수 있습니다. 아름다운 LED 라이팅이 내장되어 어두운 실내에서도 화려한 비행 쇼를 연출하며, 온 가족이 다 함께 즐기기 좋은 최고의 액티비티 완구입니다.',
+    isRocket: true,
+    isBest: true,
+    tags: ['플라잉볼', '스피너볼', '우주비행볼', '장난감', '어린이선물'],
+    createdAt: '2026-07-19T12:00:00Z'
   },
   {
     id: '1',

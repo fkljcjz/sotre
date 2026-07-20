@@ -383,26 +383,14 @@ export default function App() {
     e.preventDefault();
     if (!formProduct) return;
 
-    // Validate
+    // No strict blocking validation, allow save even if some fields are empty.
     const errors: Record<string, string> = {};
-    if (!formProduct.title?.trim()) errors.title = '상품명을 입력해주세요.';
-    if (!formProduct.coupangUrl?.trim()) errors.coupangUrl = '쿠팡 파트너스 링크를 입력해주세요.';
-    if (!formProduct.imageUrl?.trim()) errors.imageUrl = '이미지 URL을 선택하거나 입력해주세요.';
-    if (!formProduct.originalPrice || formProduct.originalPrice <= 0) errors.originalPrice = '정상가를 입력해주세요.';
-    if (!formProduct.salePrice || formProduct.salePrice <= 0) errors.salePrice = '할인가를 입력해주세요.';
-    if (formProduct.originalPrice && formProduct.salePrice && formProduct.salePrice > formProduct.originalPrice) {
-      errors.salePrice = '할인 가격은 정상가보다 낮아야 합니다.';
-    }
+    setFormErrors(errors);
 
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
-    // Auto-calculate discount rate
+    // Auto-calculate discount rate safely
     const orig = formProduct.originalPrice || 0;
     const sale = formProduct.salePrice || 0;
-    const computedDiscount = Math.max(0, Math.round(((orig - sale) / orig) * 100));
+    const computedDiscount = orig > 0 ? Math.max(0, Math.round(((orig - sale) / orig) * 100)) : 0;
 
     const finalProduct: Product = {
       id: formProduct.id || Date.now().toString(),
@@ -555,18 +543,18 @@ export default function App() {
       )}
 
       {/* Product Image */}
-      <div className="relative aspect-[16/9] w-full bg-slate-50 overflow-hidden">
+      <div className="relative aspect-square w-full bg-white overflow-hidden p-2">
         <img
           src={product.imageUrl}
           alt={product.title}
-          className="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+          className="w-full h-full object-contain transition group-hover:scale-[1.03] duration-300"
           referrerPolicy="no-referrer"
           loading="lazy"
         />
       </div>
 
       {/* Text body */}
-      <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[46px]">
+      <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[36px]">
         <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-2 leading-tight tracking-tight select-none">
           {product.title}
         </h4>
@@ -767,13 +755,25 @@ export default function App() {
 
           {/* Special Custom Link/Banner Placeholder Box */}
           {!searchQuery && (
-            <div className="px-4 -mt-1 flex justify-center">
-              <button 
-                onClick={() => window.open('https://link.coupang.com/a/fnPPvTMbUy', '_blank', 'noopener,noreferrer')}
-                className="w-full max-w-[220px] bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md active:scale-[0.99] cursor-pointer"
+            <div className="px-4 my-3.5 flex flex-col items-center justify-center">
+              <motion.button 
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={(e) => e.preventDefault()}
+                className="relative overflow-hidden w-full max-w-[280px] bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white text-xs font-bold py-3 px-5 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/40 border border-white/10 transition-all duration-300 cursor-pointer group"
               >
-                <span>✨ 최고의 상품 10개 보러가기</span>
-              </button>
+                {/* Shining glass-shimmer light effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 animate-shimmer" />
+                
+                <div className="relative z-10 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
+                  <span className="tracking-tight font-extrabold drop-shadow-sm">최고의 상품 10개 보기</span>
+                  <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1 shrink-0 text-white/90" />
+                </div>
+              </motion.button>
+              <p className="text-[11px] font-extrabold text-[#2E1044]/90 mt-2.5 tracking-tight flex items-center gap-1 select-none">
+                ✨ 유명인들이 추천하는 아이템
+              </p>
             </div>
           )}
 
@@ -915,11 +915,11 @@ export default function App() {
 
               <div className="grid grid-cols-1">
                 {/* Image panel */}
-                <div className="relative bg-slate-50 aspect-[16/9] w-full">
+                <div className="relative bg-white aspect-[3/4] w-full overflow-hidden p-4">
                   <img
                     src={selectedProduct.imageUrl}
                     alt={selectedProduct.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     referrerPolicy="no-referrer"
                   />
                 </div>
@@ -1039,77 +1039,81 @@ export default function App() {
                 </div>
 
                 {/* Category & Rocket / Best Toggles */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">카테고리</label>
-                    <select
-                      value={formProduct.category || 'digital'}
-                      onChange={(e) => setFormProduct({ ...formProduct, category: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
-                    >
-                      {CATEGORIES.filter(c => c.id !== 'all').map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                {!formProduct.id && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1.5">카테고리</label>
+                      <select
+                        value={formProduct.category || 'digital'}
+                        onChange={(e) => setFormProduct({ ...formProduct, category: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        {CATEGORIES.filter(c => c.id !== 'all').map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.label}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="flex items-center justify-center border border-slate-100 bg-slate-50/50 p-2.5 rounded-xl">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!formProduct.isRocket}
-                        onChange={(e) => setFormProduct({ ...formProduct, isRocket: e.target.checked })}
-                        className="rounded border-slate-300 text-red-500 focus:ring-red-500 w-4 h-4"
-                      />
-                      <span className="text-xs font-bold text-slate-600">🚀 로켓배송 적용</span>
-                    </label>
-                  </div>
+                    <div className="flex items-center justify-center border border-slate-100 bg-slate-50/50 p-2.5 rounded-xl">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!formProduct.isRocket}
+                          onChange={(e) => setFormProduct({ ...formProduct, isRocket: e.target.checked })}
+                          className="rounded border-slate-300 text-red-500 focus:ring-red-500 w-4 h-4"
+                        />
+                        <span className="text-xs font-bold text-slate-600">🚀 로켓배송 적용</span>
+                      </label>
+                    </div>
 
-                  <div className="flex items-center justify-center border border-slate-100 bg-slate-50/50 p-2.5 rounded-xl">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!formProduct.isBest}
-                        onChange={(e) => setFormProduct({ ...formProduct, isBest: e.target.checked })}
-                        className="rounded border-slate-300 text-red-500 focus:ring-red-500 w-4 h-4"
-                      />
-                      <span className="text-xs font-bold text-slate-600">⭐️ 베스트 배너 노출</span>
-                    </label>
+                    <div className="flex items-center justify-center border border-slate-100 bg-slate-50/50 p-2.5 rounded-xl">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!formProduct.isBest}
+                          onChange={(e) => setFormProduct({ ...formProduct, isBest: e.target.checked })}
+                          className="rounded border-slate-300 text-red-500 focus:ring-red-500 w-4 h-4"
+                        />
+                        <span className="text-xs font-bold text-slate-600">⭐️ 베스트 배너 노출</span>
+                      </label>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Price original vs sale */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">정상 판매가 (원)</label>
-                    <input
-                      type="number"
-                      value={formProduct.originalPrice || ''}
-                      onChange={(e) => setFormProduct({ ...formProduct, originalPrice: parseInt(e.target.value) || 0 })}
-                      placeholder="예: 899000"
-                      className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
-                    />
-                    {formErrors.originalPrice && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.originalPrice}</p>}
-                  </div>
+                {!formProduct.id && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1.5">정상 판매가 (원)</label>
+                      <input
+                        type="number"
+                        value={formProduct.originalPrice || ''}
+                        onChange={(e) => setFormProduct({ ...formProduct, originalPrice: parseInt(e.target.value) || 0 })}
+                        placeholder="예: 899000"
+                        className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                      {formErrors.originalPrice && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.originalPrice}</p>}
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">제휴 할인 가격 (원)</label>
-                    <input
-                      type="number"
-                      value={formProduct.salePrice || ''}
-                      onChange={(e) => setFormProduct({ ...formProduct, salePrice: parseInt(e.target.value) || 0 })}
-                      placeholder="예: 835000"
-                      className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
-                    />
-                    {formErrors.salePrice && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.salePrice}</p>}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1.5">제휴 할인 가격 (원)</label>
+                      <input
+                        type="number"
+                        value={formProduct.salePrice || ''}
+                        onChange={(e) => setFormProduct({ ...formProduct, salePrice: parseInt(e.target.value) || 0 })}
+                        placeholder="예: 835000"
+                        className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
+                      />
+                      {formErrors.salePrice && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.salePrice}</p>}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Coupang Partners Link */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1.5">쿠팡 파트너스 링크 (Affiliate URL)</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formProduct.coupangUrl || ''}
                     onChange={(e) => setFormProduct({ ...formProduct, coupangUrl: e.target.value })}
                     placeholder="예: https://link.coupang.com/a/..."
@@ -1119,35 +1123,37 @@ export default function App() {
                 </div>
 
                 {/* Image selection and Custom input */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-500">상품 대표 이미지 URL</label>
-                    <span className="text-[10px] text-slate-400">아래 프리셋을 선택하면 고화질 이미지가 자동 완성됩니다</span>
-                  </div>
-                  <input
-                    type="url"
-                    value={formProduct.imageUrl || ''}
-                    onChange={(e) => setFormProduct({ ...formProduct, imageUrl: e.target.value })}
-                    placeholder="예: https://images.unsplash.com/photo-..."
-                    className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
-                  />
-                  {formErrors.imageUrl && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.imageUrl}</p>}
+                {!formProduct.id && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-500">상품 대표 이미지 URL</label>
+                      <span className="text-[10px] text-slate-400">아래 프리셋을 선택하면 고화질 이미지가 자동 완성됩니다</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={formProduct.imageUrl || ''}
+                      onChange={(e) => setFormProduct({ ...formProduct, imageUrl: e.target.value })}
+                      placeholder="예: https://images.unsplash.com/photo-..."
+                      className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                    {formErrors.imageUrl && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.imageUrl}</p>}
 
-                  {/* Preset Selector */}
-                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
-                    {PRESET_IMAGES.map((img, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setFormProduct({ ...formProduct, imageUrl: img.url })}
-                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition ${formProduct.imageUrl === img.url ? 'border-red-500' : 'border-transparent hover:border-slate-300'}`}
-                        title={img.label}
-                      >
-                        <img src={img.url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      </button>
-                    ))}
+                    {/* Preset Selector */}
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
+                      {PRESET_IMAGES.map((img, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setFormProduct({ ...formProduct, imageUrl: img.url })}
+                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition ${formProduct.imageUrl === img.url ? 'border-red-500' : 'border-transparent hover:border-slate-300'}`}
+                          title={img.label}
+                        >
+                          <img src={img.url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Tags (comma separated) */}
                 <div>
@@ -1165,16 +1171,18 @@ export default function App() {
                 </div>
 
                 {/* Description */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">MD 추천평 및 상세 스펙 특징</label>
-                  <textarea
-                    rows={3}
-                    value={formProduct.description || ''}
-                    onChange={(e) => setFormProduct({ ...formProduct, description: e.target.value })}
-                    placeholder="사용자에게 유용한 할인 정보, 실용적인 사유, 기능적 이점을 친절하게 설명해주세요."
-                    className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
-                  />
-                </div>
+                {!formProduct.id && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">MD 추천평 및 상세 스펙 특징</label>
+                    <textarea
+                      rows={3}
+                      value={formProduct.description || ''}
+                      onChange={(e) => setFormProduct({ ...formProduct, description: e.target.value })}
+                      placeholder="사용자에게 유용한 할인 정보, 실용적인 사유, 기능적 이점을 친절하게 설명해주세요."
+                      className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500"
+                    />
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2 pt-4 border-t border-slate-100">

@@ -61,3 +61,19 @@ body {
   animation: marquee-seamless 15s linear infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-150%);
+  }
+  50% {
+    transform: translateX(150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3.5s infinite;
+}
+
