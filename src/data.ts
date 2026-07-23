@@ -8,6 +8,7 @@ import benqMonitorImg from './assets/images/benq_monitor_1784038159423.jpg';
 import alubarPowerstripImg from './assets/images/alubar_powerstrip_perfect_replica_1784489797658.jpg';
 import toiletPaperRollsImg from './assets/images/zalpullineun_tissue_exact_1784479641126.jpg';
 import flyingSpinnerBallImg from './assets/images/flying_spinner_ball_1784529305695.jpg';
+import greenAppleSquishyImg from './assets/images/cheongsagwa_wakppuball_1784795207533.jpg';
 
 export const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -69,6 +70,21 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isBest: true,
     tags: ['플라잉볼', '스피너볼', '우주비행볼', '장난감', '어린이선물'],
     createdAt: '2026-07-19T12:00:00Z'
+  },
+  {
+    id: 'green_apple_squishy',
+    title: '05 상큼톡톡 청사과 왁뿌볼',
+    category: 'other',
+    originalPrice: 15900,
+    salePrice: 9900,
+    discountRate: 37,
+    coupangUrl: 'https://link.coupang.com/a/fCh4jrrHxc',
+    imageUrl: greenAppleSquishyImg,
+    description: '한 손에 쏙 들어오는 귀여운 청사과 모양 왁뿌볼 스퀴시 말랑이! 쫀득쫀득하고 말랑말랑한 감촉으로 누를 때마다 스트레스가 싹 풀립니다. 상큼한 청사과 디자인에 투명하고 톡톡 터지는 질감으로 남녀노소 즐기기 좋은 인기 완구 아이템입니다.',
+    isRocket: true,
+    isBest: true,
+    tags: ['청사과왁뿌볼', '왁뿌볼', '말랑이', '스퀴시', '장난감', '스트레스해소'],
+    createdAt: '2026-07-23T00:00:00Z'
   },
   {
     id: '1',
