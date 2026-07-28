@@ -34,7 +34,15 @@ import {
   CheckCircle,
   Clock,
   Eye,
-  EyeOff
+  EyeOff,
+  ArrowLeft,
+  Trophy,
+  QrCode,
+  Laptop,
+  Share2,
+  Mail,
+  Smartphone,
+  MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, CATEGORIES, SORT_OPTIONS } from './types';
@@ -70,33 +78,30 @@ export default function App() {
       }
     }
 
-    // Always guarantee custom non-numeric default products exist in the list and hold the latest default metadata
+    // Ensure default non-numeric products exist if not present, but preserve any edits made by the user
     const nonNumericDefaults = DEFAULT_PRODUCTS.filter(p => isNaN(parseInt(p.id, 10)));
     
     // We reverse it to maintain their original relative order when prepending
     for (const defaultProduct of [...nonNumericDefaults].reverse()) {
       const hasProduct = loadedProducts.some(p => p.id === defaultProduct.id);
-      if (hasProduct) {
-        loadedProducts = loadedProducts.map(p => {
-          if (p.id === defaultProduct.id) {
-            return {
-              ...p,
-              title: defaultProduct.title,
-              imageUrl: defaultProduct.imageUrl,
-              coupangUrl: defaultProduct.coupangUrl,
-              originalPrice: defaultProduct.originalPrice,
-              salePrice: defaultProduct.salePrice,
-              discountRate: defaultProduct.discountRate,
-              isRocket: defaultProduct.isRocket,
-              isBest: defaultProduct.isBest,
-            };
-          }
-          return p;
-        });
-      } else {
+      if (!hasProduct) {
         loadedProducts = [defaultProduct, ...loadedProducts];
       }
     }
+
+    // Sync default metadata for preset items (especially monster_privacy_glass & alubar_powerstrip -> performance)
+    loadedProducts = loadedProducts.map(p => {
+      const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
+      if (defaultMatch) {
+        return {
+          ...p,
+          topType: defaultMatch.topType || p.topType,
+          title: (defaultMatch.id === 'alubar_powerstrip' || defaultMatch.id === 'monster_privacy_glass') ? defaultMatch.title : p.title
+        };
+      }
+      return p;
+    });
+
     return loadedProducts;
   });
 
@@ -135,6 +140,8 @@ export default function App() {
   const [highDiscountOnly, setHighDiscountOnly] = useState(false);
 
   // UI Modals & Panels State
+  const [showTop10View, setShowTop10View] = useState(false);
+  const [topTab, setTopTab] = useState<'all' | 'cost_effective' | 'performance'>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -168,15 +175,85 @@ export default function App() {
   const [formProduct, setFormProduct] = useState<Partial<Product> | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Share Notification Toast
+  // Share Modal & Notification Toast State
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Toast Auto-hide
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(''), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const SHARE_URL = 'https://sotre.netlify.app/';
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(SHARE_URL);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = SHARE_URL;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    setCopiedLink(true);
+    setToastMessage('링크가 클립보드에 복사되었습니다!');
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleShareButtonClick = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Hapix',
+          text: '가성비와 성능으로 검증된 추천 상품 스토어',
+          url: SHARE_URL
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    setShowShareModal(true);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Hapix',
+          text: '가성비와 성능으로 검증된 추천 상품 스토어',
+          url: SHARE_URL
+        });
+      } catch {
+        // User closed native share sheet
+      }
+    } else {
+      handleCopyShareLink();
+    }
+  };
 
   // Hero banner index
   const [heroIndex, setHeroIndex] = useState(0);
 
+  // Main screen products (excludes monster_privacy_glass)
+  const mainProducts = products.filter(p => p.id !== 'monster_privacy_glass');
+
   // Filter best products for the hero banner
-  const bestProducts = products.filter(p => p.isBest).slice(0, 3);
-  const bannerProducts = bestProducts.length > 0 ? bestProducts : products.slice(0, 3);
+  const bestProducts = mainProducts.filter(p => p.isBest).slice(0, 3);
+  const bannerProducts = bestProducts.length > 0 ? bestProducts : mainProducts.slice(0, 3);
+
+  // Top Products List for dedicated "최고의 상품" view
+  // Classified into cost-effective (가성비) and performance (성능)
+  const costEffectiveProducts = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'both') && p.id !== 'monster_privacy_glass' && p.id !== 'alubar_powerstrip');
+  const performanceProducts = products.filter(p => p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip');
+  const top10Products = products.filter(p => p.topType === 'cost_effective' || p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip');
 
   // Auto-scroll hero banner
   useEffect(() => {
@@ -199,8 +276,8 @@ export default function App() {
     }
   }, [products]);
 
-  // Handle Search & Filter logic
-  const filteredProducts = products.filter(product => {
+  // Handle Search & Filter logic (main screen)
+  const filteredProducts = mainProducts.filter(product => {
     const matchesSearch = 
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -405,7 +482,8 @@ export default function App() {
       isRocket: !!formProduct.isRocket,
       isBest: !!formProduct.isBest,
       tags: formProduct.tags || [],
-      createdAt: formProduct.createdAt || new Date().toISOString()
+      createdAt: formProduct.createdAt || new Date().toISOString(),
+      topType: formProduct.topType || 'cost_effective'
     };
 
     if (formProduct.id) {
@@ -524,7 +602,7 @@ export default function App() {
     >
       {/* Admin controls */}
       {isAdminMode && (
-        <div className="absolute top-1 left-1 z-10 flex gap-0.5">
+        <div className="absolute top-1 right-1 z-10 flex gap-0.5">
           <button
             onClick={(e) => handleOpenEditForm(product, e)}
             className="bg-white/95 p-1 rounded shadow-sm border border-slate-100"
@@ -542,6 +620,25 @@ export default function App() {
         </div>
       )}
 
+      {/* Top Type Badge for Best View (가성비 vs 성능 - NO 1위 ranking) */}
+      {showTop10View && (
+        <div className="absolute top-1 left-1 z-10">
+          {product.id === 'alubar_powerstrip' || product.id === 'monster_privacy_glass' || product.topType === 'performance' ? (
+            <span className="bg-indigo-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-indigo-400/40">
+              ⚡ 성능
+            </span>
+          ) : product.topType === 'both' ? (
+            <span className="bg-purple-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-purple-400/40">
+              🔥 BEST
+            </span>
+          ) : (
+            <span className="bg-emerald-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-emerald-400/40">
+              💡 가성비
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Product Image */}
       <div className="relative aspect-square w-full bg-white overflow-hidden p-2">
         <img
@@ -555,7 +652,7 @@ export default function App() {
 
       {/* Text body */}
       <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[36px]">
-        <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-2 leading-tight tracking-tight select-none">
+        <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-3 leading-tight tracking-tight select-none whitespace-pre-line">
           {product.title}
         </h4>
       </div>
@@ -716,8 +813,8 @@ export default function App() {
         {/* Outer scrollable area */}
         <div className="flex-1 overflow-y-auto pb-10 scrollbar-none space-y-6">
           
-          {/* Hapix Store Title */}
-          <div className="flex flex-col items-center pt-5 pb-1">
+          {/* Hapix Store Title & YouTube-style Share Button */}
+          <div className="relative px-4 pt-5 pb-1 flex items-center justify-center">
             <h1 
               onClick={handleNoticeClick}
               className="text-2xl font-black text-[#2E1044] tracking-tight hover:scale-105 transition cursor-pointer select-none"
@@ -725,6 +822,19 @@ export default function App() {
             >
               Hapix
             </h1>
+
+            {/* YouTube Style Share Icon Button */}
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={handleShareButtonClick}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/90 text-slate-800 flex items-center justify-center transition border border-slate-200 shadow-2xs cursor-pointer select-none"
+              title="공유하기"
+            >
+              <svg className="w-4 h-4 fill-slate-800 ml-0.5" viewBox="0 0 24 24">
+                <path d="M15 5.636v-3.636l9 9-9 9v-3.955c-6.848 0-11.455 2.182-15 7.136 1.364-6.818 5.455-13.545 15-14.545z" />
+              </svg>
+            </motion.button>
           </div>
 
           {/* Search Box */}
@@ -759,7 +869,7 @@ export default function App() {
               <motion.button 
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={(e) => e.preventDefault()}
+                onClick={() => setShowTop10View(true)}
                 className="relative overflow-hidden w-full max-w-[280px] bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white text-xs font-bold py-3 px-5 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/40 border border-white/10 transition-all duration-300 cursor-pointer group"
               >
                 {/* Shining glass-shimmer light effect */}
@@ -772,35 +882,123 @@ export default function App() {
                 </div>
               </motion.button>
               <p className="text-[11px] font-extrabold text-[#2E1044]/90 mt-2.5 tracking-tight flex items-center gap-1 select-none">
-                🔥 요즘 가장 인기 있는 아이템
+                {showTop10View ? '성능 또는 가성비에서 탑인 제품만 소개합니다' : '🔥 요즘 가장 인기 있는 아이템'}
               </p>
             </div>
           )}
 
-          {/* Main Product Grid */}
-          <div className="space-y-4">
-            {sortedProducts.length > 0 ? (
-              <div className="px-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {sortedProducts.map(product => renderProductCard(product))}
+          {/* Conditional View: Top 10 View vs Main Product Grid */}
+          {showTop10View ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-3 pt-1"
+            >
+              {/* Header Navigation & Filter Tabs */}
+              <div className="px-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                <button
+                  onClick={() => setShowTop10View(false)}
+                  className="flex items-center justify-center gap-1 text-xs font-bold text-purple-900 bg-white/90 backdrop-blur hover:bg-white px-3 py-1.5 rounded-xl border border-purple-100 shadow-xs transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>메인으로</span>
+                </button>
+
+                {/* Filter Tabs for 전체, 가성비, 성능 */}
+                <div className="flex items-center justify-center bg-white/90 backdrop-blur p-1 rounded-xl border border-purple-100 shadow-xs text-[11px] font-extrabold gap-1">
+                  <button
+                    onClick={() => setTopTab('all')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${topTab === 'all' ? 'bg-purple-950 text-white shadow-xs' : 'text-slate-600 hover:text-purple-900'}`}
+                  >
+                    전체
+                  </button>
+                  <button
+                    onClick={() => setTopTab('cost_effective')}
+                    className={`px-3 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${topTab === 'cost_effective' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-emerald-700'}`}
+                  >
+                    <span>💡 가성비</span>
+                  </button>
+                  <button
+                    onClick={() => setTopTab('performance')}
+                    className={`px-3 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${topTab === 'performance' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-indigo-700'}`}
+                  >
+                    <span>⚡ 성능</span>
+                  </button>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-12 px-4 bg-white mx-4 rounded-2xl border border-purple-100 shadow-sm">
-                <AlertTriangle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <h3 className="text-xs font-bold text-slate-800">원하시는 조건의 상품이 없습니다</h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">검색어를 바꾸거나 다시 시도해 보세요.</p>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="mt-3 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-lg transition"
-                  >
-                    검색 초기화
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+
+              {/* 전체 Tab View */}
+              {topTab === 'all' && (
+                <div className="px-3">
+                  {top10Products.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {top10Products.map(product => renderProductCard(product))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-xs font-bold text-white/70 bg-white/10 backdrop-blur rounded-2xl border border-white/10">
+                      등록된 추천 상품이 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 가성비 Tab View */}
+              {topTab === 'cost_effective' && (
+                <div className="px-3">
+                  {costEffectiveProducts.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {costEffectiveProducts.map(product => renderProductCard(product))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-xs font-bold text-white/70 bg-white/10 backdrop-blur rounded-2xl border border-white/10">
+                      등록된 가성비 상품이 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 성능 Tab View */}
+              {topTab === 'performance' && (
+                <div className="px-3">
+                  {performanceProducts.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {performanceProducts.map(product => renderProductCard(product))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-xs font-bold text-white/70 bg-white/10 backdrop-blur rounded-2xl border border-white/10">
+                      등록된 성능 추천 상품이 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            /* Main Product Grid */
+            <div className="space-y-4">
+              {sortedProducts.length > 0 ? (
+                <div className="px-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {sortedProducts.map(product => renderProductCard(product))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4 bg-white mx-4 rounded-2xl border border-purple-100 shadow-sm">
+                  <AlertTriangle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <h3 className="text-xs font-bold text-slate-800">원하시는 조건의 상품이 없습니다</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">검색어를 바꾸거나 다시 시도해 보세요.</p>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-3 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-lg transition"
+                    >
+                      검색 초기화
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Footer legal disclaimer */}
           <div className="px-4 text-center text-[8px] text-slate-400 leading-normal space-y-1 pb-4">
@@ -938,7 +1136,7 @@ export default function App() {
                       )}
                     </div>
 
-                    <h2 className="text-lg md:text-xl font-black text-slate-950 leading-snug">
+                    <h2 className="text-lg md:text-xl font-black text-slate-950 leading-snug whitespace-pre-line">
                       {selectedProduct.title}
                     </h2>
 
@@ -1027,15 +1225,38 @@ export default function App() {
               <form onSubmit={handleSaveProduct} className="space-y-4">
                 {/* Title */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">상품명 (공식 명칭)</label>
-                  <input
-                    type="text"
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-500">상품명 (공식 명칭)</label>
+                    <span className="text-[10px] text-slate-400">Enter 또는 Shift+Enter 키로 줄바꿈 가능</span>
+                  </div>
+                  <textarea
+                    rows={2}
                     value={formProduct.title || ''}
                     onChange={(e) => setFormProduct({ ...formProduct, title: e.target.value })}
-                    placeholder="예: Apple 2024 아이패드 에어 11형 M2칩 Wi-Fi 128GB"
-                    className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        // Allow Enter inside textarea for multiline without submitting form
+                        e.stopPropagation();
+                      }
+                    }}
+                    placeholder={`예: 02 알루바프로 멀티탭\n(성능)`}
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 resize-y"
                   />
                   {formErrors.title && <p className="text-red-500 text-[11px] mt-1 font-semibold">{formErrors.title}</p>}
+                </div>
+
+                {/* Top Product Type Selection (가성비 vs 성능) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1.5">최고의 상품 구분 (가성비 VS 성능)</label>
+                  <select
+                    value={formProduct.topType || 'cost_effective'}
+                    onChange={(e) => setFormProduct({ ...formProduct, topType: e.target.value as 'cost_effective' | 'performance' | 'both' })}
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    <option value="cost_effective">💡 가성비 추천 (Cost-Effective)</option>
+                    <option value="performance">⚡ 성능/스펙 추천 (High Performance)</option>
+                    <option value="both">🔥 가성비 & 성능 겸비 (Both)</option>
+                  </select>
                 </div>
 
                 {/* Category & Rocket / Best Toggles */}
@@ -1206,6 +1427,195 @@ export default function App() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* LINK SHARE MODAL (Native System Style Bottom Sheet) */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div 
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+              className="bg-[#F6F7F9] rounded-t-[28px] sm:rounded-3xl p-5 max-w-sm sm:max-w-md w-full border border-slate-200 shadow-2xl relative space-y-4"
+            >
+              {/* Top Grab Bar for Mobile Sheet */}
+              <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto -mt-1 mb-1 sm:hidden" />
+
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-1">
+                <h3 className="text-base font-extrabold text-slate-900">
+                  링크 공유
+                </h3>
+                <button 
+                  onClick={() => setShowShareModal(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200/60 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Main Link Card */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex flex-col items-center justify-center text-white font-black text-[9px] leading-tight shrink-0 shadow-xs">
+                  <span>HAPIX</span>
+                  <span className="text-[7px] opacity-80">LINK</span>
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-xs font-bold text-slate-900 truncate">Hapix</div>
+                  <div className="text-[11px] text-slate-400 font-mono truncate">https://sotre.netlify.app/</div>
+                </div>
+                <button
+                  onClick={handleCopyShareLink}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-700 p-2.5 rounded-xl border border-slate-200 transition shadow-xs cursor-pointer shrink-0"
+                  title="복사하기"
+                >
+                  {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Quick Action Pills Row */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleNativeShare}
+                  className="flex-1 bg-white hover:bg-slate-50 border border-slate-200/80 text-slate-800 text-[11px] font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
+                >
+                  <Laptop className="w-3.5 h-3.5 text-slate-600" />
+                  <span>기기로 보내기</span>
+                </button>
+                <button
+                  onClick={() => setShowQrCode(!showQrCode)}
+                  className={`flex-1 border text-[11px] font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer ${
+                    showQrCode 
+                      ? 'bg-purple-50 border-purple-300 text-purple-900' 
+                      : 'bg-white border-slate-200/80 hover:bg-slate-50 text-slate-800'
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5 text-slate-600" />
+                  <span>QR 코드</span>
+                </button>
+              </div>
+
+              {/* QR Code Section Toggle */}
+              <AnimatePresence>
+                {showQrCode && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden bg-white p-4 rounded-2xl border border-slate-200 text-center space-y-2 shadow-inner"
+                  >
+                    <img 
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://sotre.netlify.app/"
+                      alt="Hapix QR Code"
+                      className="w-36 h-36 mx-auto rounded-xl border border-slate-100 p-1"
+                    />
+                    <p className="text-[10px] text-slate-500 font-semibold">
+                      스마트폰 카메라로 QR 코드를 스캔하여 접속하세요
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* App Icons Share Grid (Matches image grid: Quick Share, KakaoTalk, Discord, Instagram, Gmail) */}
+              <div className="pt-2">
+                <p className="text-[10px] font-bold text-slate-400 mb-2.5 text-left px-1">앱으로 바로 공유하기</p>
+                <div className="grid grid-cols-5 gap-2 text-center">
+                  
+                  {/* Quick Share */}
+                  <button
+                    onClick={handleNativeShare}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 via-sky-500 to-cyan-400 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                      <Share2 className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-700">퀵 셰어</span>
+                  </button>
+
+                  {/* KakaoTalk */}
+                  <button
+                    onClick={() => {
+                      handleCopyShareLink();
+                      setToastMessage('카카오톡 공유 링크 복사 완료!');
+                    }}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-[#FEE500] text-[#191919] flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                      <svg className="w-5 h-5 fill-[#3C1E1E]" viewBox="0 0 24 24">
+                        <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.484.378.353.156-.103 2.486-1.69 3.5-2.38.52.076 1.055.118 1.632.118 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-700">카카오톡</span>
+                  </button>
+
+                  {/* Discord */}
+                  <button
+                    onClick={() => {
+                      handleCopyShareLink();
+                      setToastMessage('디스코드 공유 링크 복사 완료!');
+                    }}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-[#5865F2] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-700">Discord</span>
+                  </button>
+
+                  {/* Instagram */}
+                  <button
+                    onClick={() => {
+                      handleCopyShareLink();
+                      setToastMessage('인스타그램 공유 링크 복사 완료!');
+                    }}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-700">Instagram</span>
+                  </button>
+
+                  {/* Gmail */}
+                  <a
+                    href={`mailto:?subject=Hapix%20스토어&body=가성비%20완벽%20추천%20스토어:%20${encodeURIComponent(SHARE_URL)}`}
+                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                      </svg>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-700">Gmail</span>
+                  </a>
+
+                </div>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900/90 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-white/10 backdrop-blur-md flex items-center gap-2"
+          >
+            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{toastMessage}</span>
+          </motion.div>
         )}
       </AnimatePresence>
 

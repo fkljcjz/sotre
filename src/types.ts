@@ -17,6 +17,7 @@ export interface Product {
   isBest: boolean; // Highlighted or best seller
   tags: string[];
   createdAt: string;
+  topType?: 'cost_effective' | 'performance' | 'both'; // 가성비 vs 성능 구분
 }
 
 export const CATEGORIES = [
