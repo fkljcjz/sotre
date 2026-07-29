@@ -42,7 +42,8 @@ import {
   Share2,
   Mail,
   Smartphone,
-  MessageCircle
+  MessageCircle,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, CATEGORIES, SORT_OPTIONS } from './types';
@@ -168,6 +169,46 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('hapix_lockout_until', lockoutUntil.toString());
   }, [lockoutUntil]);
+
+  // External Site Link Configuration State
+  const [familySiteConfig, setFamilySiteConfig] = useState<{ name: string; url: string; desc: string }>(() => {
+    const saved = localStorage.getItem('hapix_family_site');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.name === '공식 패밀리 사이트' || parsed.name === 'Hapix 사이트') {
+          parsed.name = 'Hapix 공식 사이트';
+        }
+        return parsed;
+      } catch (e) {}
+    }
+    return {
+      name: 'Hapix 공식 사이트',
+      url: 'https://sotre.netlify.app/',
+      desc: '더 많은 추천 정보와 유용한 소식 보러가기'
+    };
+  });
+  const [showLinkConfigModal, setShowLinkConfigModal] = useState(false);
+  const [tempLinkName, setTempLinkName] = useState(familySiteConfig.name);
+  const [tempLinkUrl, setTempLinkUrl] = useState(familySiteConfig.url);
+  const [tempLinkDesc, setTempLinkDesc] = useState(familySiteConfig.desc);
+
+  const handleSaveFamilySiteConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    let url = tempLinkUrl.trim();
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    const updated = {
+      name: tempLinkName.trim() || 'Hapix 공식 사이트',
+      url: url || 'https://sotre.netlify.app/',
+      desc: tempLinkDesc.trim() || '더 많은 추천 정보와 유용한 소식 보러가기'
+    };
+    setFamilySiteConfig(updated);
+    localStorage.setItem('hapix_family_site', JSON.stringify(updated));
+    setShowLinkConfigModal(false);
+    triggerToast('공식 사이트 링크 정보가 변경되었습니다.');
+  };
 
   // Add/Edit Product Form Modal State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -752,6 +793,18 @@ export default function App() {
                   <span>전체 삭제</span>
                 </button>
                 <button
+                  onClick={() => {
+                    setTempLinkName(familySiteConfig.name);
+                    setTempLinkUrl(familySiteConfig.url);
+                    setTempLinkDesc(familySiteConfig.desc);
+                    setShowLinkConfigModal(true);
+                  }}
+                  className="flex items-center space-x-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl text-[10px] font-bold transition border border-purple-200/60 cursor-pointer"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>링크 설정</span>
+                </button>
+                <button
                   onClick={handleAdminLogout}
                   className="flex items-center space-x-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold transition ml-auto"
                 >
@@ -812,11 +865,25 @@ export default function App() {
         {/* Outer scrollable area */}
         <div className="flex-1 overflow-y-auto pb-10 scrollbar-none space-y-6">
           
-          {/* Hapix Store Title & YouTube-style Share Button */}
-          <div className="relative px-4 pt-5 pb-1 flex items-center justify-center">
+          {/* Hapix Store Title, Family Site Link Pill & Share Button */}
+          <div className="relative px-4 pt-5 pb-1 flex items-center justify-between min-h-[48px]">
+            {/* Top External Link Badge/Pill */}
+            <a
+              href={familySiteConfig.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-purple-100/90 hover:bg-purple-200 text-purple-900 text-[10px] font-extrabold py-1.5 px-2.5 rounded-full border border-purple-200/80 transition cursor-pointer shadow-2xs group shrink-0 z-10 max-w-[125px]"
+              title={`${familySiteConfig.name} 바로가기`}
+            >
+              <Globe className="w-3.5 h-3.5 text-purple-700 group-hover:rotate-12 transition-transform shrink-0" />
+              <span className="truncate">{familySiteConfig.name}</span>
+              <ExternalLink className="w-3 h-3 text-purple-600 opacity-80 shrink-0" />
+            </a>
+
+            {/* Absolutely Centered Hapix Title */}
             <h1 
               onClick={handleNoticeClick}
-              className="text-2xl font-black text-[#2E1044] tracking-tight hover:scale-105 transition cursor-pointer select-none"
+              className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-2xl font-black text-[#2E1044] tracking-tight hover:scale-105 transition cursor-pointer select-none z-10 whitespace-nowrap"
               title="10번 연속 클릭 시 관리자 설정"
             >
               Hapix
@@ -827,7 +894,7 @@ export default function App() {
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.92 }}
               onClick={handleShareButtonClick}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/90 text-slate-800 flex items-center justify-center transition border border-slate-200 shadow-2xs cursor-pointer select-none"
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/90 text-slate-800 flex items-center justify-center transition border border-slate-200 shadow-2xs cursor-pointer select-none shrink-0 z-10 ml-auto"
               title="공유하기"
             >
               <svg className="w-4 h-4 fill-slate-800 ml-0.5" viewBox="0 0 24 24">
@@ -998,6 +1065,31 @@ export default function App() {
               )}
             </div>
           )}
+
+          {/* External / Family Site Card Banner */}
+          <div className="mx-4 mt-6 p-3.5 bg-gradient-to-r from-purple-50 via-white to-purple-50/50 rounded-2xl border border-purple-200/80 shadow-2xs flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 text-left">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-black text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded-md">공식 사이트</span>
+                  <span className="text-[11px] font-black text-slate-800 truncate">{familySiteConfig.name}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">{familySiteConfig.desc}</p>
+              </div>
+            </div>
+            <a
+              href={familySiteConfig.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs group"
+            >
+              <span>방문하기</span>
+              <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            </a>
+          </div>
 
           {/* Footer legal disclaimer */}
           <div className="px-4 text-center text-[8px] text-slate-400 leading-normal space-y-1 pb-4">
@@ -1598,6 +1690,90 @@ export default function App() {
                 </div>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* FAMILY SITE LINK CONFIG MODAL */}
+      <AnimatePresence>
+        {showLinkConfigModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full border border-slate-100 shadow-2xl relative"
+            >
+              <button
+                onClick={() => setShowLinkConfigModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center space-y-2 mb-6">
+                <div className="mx-auto bg-purple-100 text-purple-700 w-12 h-12 rounded-2xl flex items-center justify-center">
+                  <Globe className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-black text-slate-900">공식 사이트 링크 설정</h3>
+                <p className="text-xs text-slate-500 leading-normal">
+                  앱 상단 및 하단에 노출될 외부 사이트 링크 정보를 설정할 수 있습니다.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveFamilySiteConfig} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">사이트 이름 / 타이틀</label>
+                  <input
+                    type="text"
+                    value={tempLinkName}
+                    onChange={(e) => setTempLinkName(e.target.value)}
+                    placeholder="예: Hapix 공식 사이트, 내 블로그"
+                    className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">사이트 URL (주소)</label>
+                  <input
+                    type="text"
+                    value={tempLinkUrl}
+                    onChange={(e) => setTempLinkUrl(e.target.value)}
+                    placeholder="예: https://sotre.netlify.app"
+                    className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">한 줄 설명</label>
+                  <input
+                    type="text"
+                    value={tempLinkDesc}
+                    onChange={(e) => setTempLinkDesc(e.target.value)}
+                    placeholder="예: 다양한 추천 정보와 유용한 소식 보러가기"
+                    className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLinkConfigModal(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl text-xs font-bold transition shadow-md shadow-purple-600/10 cursor-pointer"
+                  >
+                    저장하기
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
