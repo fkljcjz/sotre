@@ -90,6 +90,21 @@ export default function App() {
       }
     }
 
+    // Sync default metadata/links for preset items if placeholder or missing
+    loadedProducts = loadedProducts.map(p => {
+      const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
+      if (defaultMatch) {
+        const isPlaceholderUrl = !p.coupangUrl || p.coupangUrl.includes('honey_watermelon') || p.coupangUrl.includes('monster_privacy');
+        if (isPlaceholderUrl) {
+          return {
+            ...p,
+            coupangUrl: defaultMatch.coupangUrl
+          };
+        }
+      }
+      return p;
+    });
+
     // Position honey_watermelon right before green_apple_squishy (청사과 왁뿌볼)
     const watermelonIdx = loadedProducts.findIndex(p => p.id === 'honey_watermelon');
     if (watermelonIdx !== -1) {
@@ -509,6 +524,11 @@ export default function App() {
     const sale = formProduct.salePrice || 0;
     const computedDiscount = orig > 0 ? Math.max(0, Math.round(((orig - sale) / orig) * 100)) : 0;
 
+    let rawUrl = (formProduct.coupangUrl || '').trim();
+    if (rawUrl && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+      rawUrl = 'https://' + rawUrl;
+    }
+
     const finalProduct: Product = {
       id: formProduct.id || Date.now().toString(),
       title: formProduct.title || '',
@@ -516,7 +536,7 @@ export default function App() {
       originalPrice: orig,
       salePrice: sale,
       discountRate: computedDiscount,
-      coupangUrl: formProduct.coupangUrl || '',
+      coupangUrl: rawUrl,
       imageUrl: formProduct.imageUrl || '',
       description: formProduct.description || '',
       isRocket: !!formProduct.isRocket,
@@ -635,7 +655,13 @@ export default function App() {
       key={product.id}
       onClick={() => {
         if (product.coupangUrl) {
-          window.open(product.coupangUrl, '_blank', 'noopener,noreferrer');
+          let targetUrl = product.coupangUrl.trim();
+          if (targetUrl && !targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'https://' + targetUrl;
+          }
+          if (targetUrl) {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          }
         }
       }}
       className="bg-white rounded-2xl overflow-hidden border border-purple-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-300 flex flex-col relative cursor-pointer group"
