@@ -89,18 +89,17 @@ export default function App() {
       }
     }
 
-    // Sync default metadata for preset items (especially monster_privacy_glass & alubar_powerstrip -> performance)
-    loadedProducts = loadedProducts.map(p => {
-      const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
-      if (defaultMatch) {
-        return {
-          ...p,
-          topType: defaultMatch.topType || p.topType,
-          title: (defaultMatch.id === 'alubar_powerstrip' || defaultMatch.id === 'monster_privacy_glass') ? defaultMatch.title : p.title
-        };
+    // Position honey_watermelon right before green_apple_squishy (청사과 왁뿌볼)
+    const watermelonIdx = loadedProducts.findIndex(p => p.id === 'honey_watermelon');
+    if (watermelonIdx !== -1) {
+      const [watermelonItem] = loadedProducts.splice(watermelonIdx, 1);
+      const wakppuballIdx = loadedProducts.findIndex(p => p.id === 'green_apple_squishy');
+      if (wakppuballIdx !== -1) {
+        loadedProducts.splice(wakppuballIdx, 0, watermelonItem);
+      } else {
+        loadedProducts.unshift(watermelonItem);
       }
-      return p;
-    });
+    }
 
     return loadedProducts;
   });
@@ -135,7 +134,7 @@ export default function App() {
   // Filtering & Sorting State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedSort, setSelectedSort] = useState('discount');
+  const [selectedSort, setSelectedSort] = useState('newest');
   const [onlyRocket, setOnlyRocket] = useState(false);
   const [highDiscountOnly, setHighDiscountOnly] = useState(false);
 
@@ -251,9 +250,9 @@ export default function App() {
 
   // Top Products List for dedicated "최고의 상품" view
   // Classified into cost-effective (가성비) and performance (성능)
-  const costEffectiveProducts = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'both') && p.id !== 'monster_privacy_glass' && p.id !== 'alubar_powerstrip');
-  const performanceProducts = products.filter(p => p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip');
-  const top10Products = products.filter(p => p.topType === 'cost_effective' || p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip');
+  const costEffectiveProducts = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'both') && p.id !== 'monster_privacy_glass' && p.id !== 'alubar_powerstrip' && p.id !== 'honey_watermelon');
+  const performanceProducts = products.filter(p => (p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon');
+  const top10Products = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon');
 
   // Auto-scroll hero banner
   useEffect(() => {

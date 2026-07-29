@@ -11,6 +11,7 @@ import flyingSpinnerBallImg from './assets/images/flying_spinner_ball_1784529305
 import greenAppleSquishyImg from './assets/images/cheongsagwa_wakppuball_1784795207533.jpg';
 import dubaiChewyCookieImg from './assets/images/dubai_chewy_cookie_1784981147819.jpg';
 import monsterPrivacyGlassImg from './assets/images/monster_privacy_glass_1785091944927.jpg';
+import koreanHoneyWatermelonImg from './assets/images/korean_honey_watermelon_1785310075611.jpg';
 
 export const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -76,6 +77,21 @@ export const DEFAULT_PRODUCTS: Product[] = [
     createdAt: '2026-07-19T00:00:00Z'
   },
   {
+    id: 'honey_watermelon',
+    title: '07 국내산 당도선별 명품 꿀수박 8kg 이상 (1통)',
+    category: 'food',
+    originalPrice: 36500,
+    salePrice: 21900,
+    discountRate: 40,
+    coupangUrl: 'https://link.coupang.com/a/honey_watermelon',
+    imageUrl: koreanHoneyWatermelonImg,
+    description: '산지직송 당도선별 명품 꿀수박! 비파괴 당도 측정으로 11 Brix 이상의 아삭하고 당도 높은 프리미엄 수박만을 엄선했습니다. 시원하고 풍부한 과즙과 달콤함으로 온 가족 여름 디저트로 추천드립니다.',
+    isRocket: true,
+    isBest: true,
+    tags: ['수박', '꿀수박', '당도선별', '신선과일', '제철과일', '여름과일'],
+    createdAt: '2026-07-29T12:00:00Z'
+  },
+  {
     id: 'green_apple_squishy',
     title: '06 상큼톡톡 청사과 왁뿌볼',
     category: 'other',
@@ -88,7 +104,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isRocket: true,
     isBest: true,
     tags: ['청사과왁뿌볼', '왁뿌볼', '말랑이', '스퀴시', '장난감', '스트레스해소'],
-    createdAt: '2026-07-25T00:00:00Z'
+    createdAt: '2026-07-28T12:00:00Z'
   },
   {
     id: 'dubai_chewy_cookie',
@@ -103,7 +119,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isRocket: true,
     isBest: true,
     tags: ['두바이쫀득쿠키', '두바이쿠키', '카다이프', '피스타치오', '디저트', '쫀득쿠키'],
-    createdAt: '2026-07-24T00:00:00Z'
+    createdAt: '2026-07-27T12:00:00Z'
   },
   {
     id: 'flying_spinner_ball',
@@ -118,7 +134,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     isRocket: true,
     isBest: true,
     tags: ['플라잉볼', '스피너볼', '우주비행볼', '장난감', '어린이선물'],
-    createdAt: '2026-07-19T12:00:00Z'
+    createdAt: '2026-07-26T12:00:00Z'
   },
   {
     id: '1',
