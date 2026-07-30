@@ -90,10 +90,13 @@ export default function App() {
     loadedProducts = loadedProducts.map(p => {
       const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
       if (defaultMatch) {
+        const hasCustomUrl = p.coupangUrl && !p.coupangUrl.includes('bCDeFg') && p.coupangUrl !== defaultMatch.coupangUrl;
         return {
           ...defaultMatch,
           ...p,
-          coupangUrl: p.id === 'monster_privacy_glass' ? defaultMatch.coupangUrl : (p.coupangUrl || defaultMatch.coupangUrl),
+          coupangUrl: (p.id === 'monster_privacy_glass' || p.id === 'honey_watermelon' || p.id === 'cartoon_beam_projector')
+            ? defaultMatch.coupangUrl 
+            : (hasCustomUrl ? p.coupangUrl : defaultMatch.coupangUrl),
           isBest: p.id === 'cartoon_beam_projector' ? false : p.isBest,
           topType: p.id === 'cartoon_beam_projector' ? undefined : p.topType,
           section: p.section || defaultMatch.section || 'popular',
@@ -639,81 +642,94 @@ export default function App() {
     other: '🎁 나만 알고 싶은 꿀템 모음 🎉'
   };
 
-  const renderProductCard = (product: Product) => (
-    <motion.div
-      layout
-      key={product.id}
-      onClick={() => {
-        if (product.coupangUrl) {
-          let targetUrl = product.coupangUrl.trim();
-          if (targetUrl && !targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-            targetUrl = 'https://' + targetUrl;
+  const renderProductCard = (product: Product) => {
+    let targetUrl = (product.coupangUrl || '').trim();
+    if (targetUrl && !targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+      targetUrl = 'https://' + targetUrl;
+    }
+
+    return (
+      <motion.a
+        layout
+        key={product.id}
+        href={targetUrl || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => {
+          if (!targetUrl || targetUrl === '#') {
+            e.preventDefault();
+            setSelectedProduct(product);
           }
-          if (targetUrl) {
-            window.open(targetUrl, '_blank', 'noopener,noreferrer');
-          }
-        }
-      }}
-      className="bg-white rounded-2xl overflow-hidden border border-purple-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-300 flex flex-col relative cursor-pointer group"
-    >
-      {/* Admin controls */}
-      {isAdminMode && (
-        <div className="absolute top-1 right-1 z-10 flex gap-0.5">
-          <button
-            onClick={(e) => handleOpenEditForm(product, e)}
-            className="bg-white/95 p-1 rounded shadow-sm border border-slate-100"
-            title="상품 수정"
-          >
-            <Edit2 className="w-2.5 h-2.5 text-blue-600" />
-          </button>
-          <button
-            onClick={(e) => handleDeleteProduct(product.id, e)}
-            className="bg-white/95 p-1 rounded shadow-sm border border-slate-100 text-red-600"
-            title="상품 삭제"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-          </button>
+        }}
+        className="bg-white rounded-2xl overflow-hidden border border-purple-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-300 flex flex-col relative cursor-pointer group text-left block select-none"
+      >
+        {/* Admin controls */}
+        {isAdminMode && (
+          <div className="absolute top-1 right-1 z-20 flex gap-0.5">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenEditForm(product, e);
+              }}
+              className="bg-white/95 p-1 rounded shadow-sm border border-slate-100 cursor-pointer"
+              title="상품 수정"
+            >
+              <Edit2 className="w-2.5 h-2.5 text-blue-600" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDeleteProduct(product.id, e);
+              }}
+              className="bg-white/95 p-1 rounded shadow-sm border border-slate-100 text-red-600 cursor-pointer"
+              title="상품 삭제"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Top Type Badge for Best View (가성비 vs 성능 - NO 1위 ranking) */}
+        {showTop10View && (
+          <div className="absolute top-1 left-1 z-10">
+            {product.id === 'alubar_powerstrip' || product.id === 'monster_privacy_glass' || product.topType === 'performance' ? (
+              <span className="bg-indigo-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-indigo-400/40">
+                ⚡ 성능
+              </span>
+            ) : product.topType === 'both' ? (
+              <span className="bg-purple-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-purple-400/40">
+                🔥 BEST
+              </span>
+            ) : (
+              <span className="bg-emerald-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-emerald-400/40">
+                💡 가성비
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Product Image */}
+        <div className="relative aspect-square w-full bg-white overflow-hidden p-2">
+          <img
+            src={product.imageUrl}
+            alt={product.title}
+            className="w-full h-full object-contain transition group-hover:scale-[1.03] duration-300"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+          />
         </div>
-      )}
 
-      {/* Top Type Badge for Best View (가성비 vs 성능 - NO 1위 ranking) */}
-      {showTop10View && (
-        <div className="absolute top-1 left-1 z-10">
-          {product.id === 'alubar_powerstrip' || product.id === 'monster_privacy_glass' || product.topType === 'performance' ? (
-            <span className="bg-indigo-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-indigo-400/40">
-              ⚡ 성능
-            </span>
-          ) : product.topType === 'both' ? (
-            <span className="bg-purple-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-purple-400/40">
-              🔥 BEST
-            </span>
-          ) : (
-            <span className="bg-emerald-600 text-white font-extrabold text-[8px] px-1.5 py-0.5 rounded-md shadow-xs border border-emerald-400/40">
-              💡 가성비
-            </span>
-          )}
+        {/* Text body */}
+        <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[36px]">
+          <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-3 leading-tight tracking-tight select-none whitespace-pre-line">
+            {product.title}
+          </h4>
         </div>
-      )}
-
-      {/* Product Image */}
-      <div className="relative aspect-square w-full bg-white overflow-hidden p-2">
-        <img
-          src={product.imageUrl}
-          alt={product.title}
-          className="w-full h-full object-contain transition group-hover:scale-[1.03] duration-300"
-          referrerPolicy="no-referrer"
-          loading="lazy"
-        />
-      </div>
-
-      {/* Text body */}
-      <div className="p-1.5 flex-1 flex flex-col justify-center text-center min-h-[36px]">
-        <h4 className="text-[10px] font-extrabold text-slate-800 line-clamp-3 leading-tight tracking-tight select-none whitespace-pre-line">
-          {product.title}
-        </h4>
-      </div>
-    </motion.div>
-  );
+      </motion.a>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#300c4c] via-[#4F1975] to-[#140026] text-slate-800 selection:bg-[#FF6E8F] selection:text-white flex flex-col items-center justify-start p-0 sm:py-4 md:py-10 sm:px-4">
