@@ -22,7 +22,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     originalPrice: 25900,
     salePrice: 15900,
     discountRate: 38,
-    coupangUrl: 'https://www.coupang.com/np/search?q=%EC%82%AC%EC%95%B1%ED%99%9C%EB%B3%B4%ED%98%B8+%EA%B0%95%ED%99%94%EC%9C%A0%EB%A6%AC',
+    coupangUrl: 'https://link.coupang.com/a/fNMB5ZcevA',
     imageUrl: monsterPrivacyGlassImg,
     description: '옆사람 시선 완벽 차단! 몬스터 28도 엿보기 방지 사생활 보호 강화유리 필름 2매 세트. 9H 고강도 표면 경도로 강력한 스크래치 방지, 지문 방지 AF 코팅 및 쉬운 부착 가이드로 기포 없이 깔끔하게 부착할 수 있습니다.',
     isRocket: true,
@@ -156,7 +156,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     imageUrl: cartoonBeamProjectorImg,
     description: '자동차, 전기차, 오토바이, 자전거 모두 사용 가능! 선명하고 선명한 LED 광원으로 바닥에 귀여운 캐릭터 빔을 쏘아주는 만화 빔 프로젝터입니다.',
     isRocket: true,
-    isBest: true,
+    isBest: false,
     tags: ['빔프로젝터', '만화빔프로젝터', '피카츄', '자동차도어등', 'LED프로젝터', '차량용품'],
     createdAt: '2026-07-29T23:05:00Z',
     section: 'popular'

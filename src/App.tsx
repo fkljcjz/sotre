@@ -93,6 +93,9 @@ export default function App() {
         return {
           ...defaultMatch,
           ...p,
+          coupangUrl: p.id === 'monster_privacy_glass' ? defaultMatch.coupangUrl : (p.coupangUrl || defaultMatch.coupangUrl),
+          isBest: p.id === 'cartoon_beam_projector' ? false : p.isBest,
+          topType: p.id === 'cartoon_beam_projector' ? undefined : p.topType,
           section: p.section || defaultMatch.section || 'popular',
         };
       }
@@ -291,9 +294,9 @@ export default function App() {
 
   // Top Products List for dedicated "최고의 상품" view
   // Classified into cost-effective (가성비) and performance (성능)
-  const costEffectiveProducts = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'both') && p.id !== 'monster_privacy_glass' && p.id !== 'alubar_powerstrip' && p.id !== 'honey_watermelon');
-  const performanceProducts = products.filter(p => (p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon');
-  const top10Products = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon');
+  const costEffectiveProducts = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'both') && p.id !== 'monster_privacy_glass' && p.id !== 'alubar_powerstrip' && p.id !== 'honey_watermelon' && p.id !== 'cartoon_beam_projector');
+  const performanceProducts = products.filter(p => (p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon' && p.id !== 'cartoon_beam_projector');
+  const top10Products = products.filter(p => (p.topType === 'cost_effective' || p.topType === 'performance' || p.topType === 'both' || p.id === 'monster_privacy_glass' || p.id === 'alubar_powerstrip') && p.id !== 'honey_watermelon' && p.id !== 'cartoon_beam_projector');
 
   // Auto-scroll hero banner
   useEffect(() => {
