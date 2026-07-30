@@ -17,7 +17,7 @@ import cartoonBeamProjectorImg from './assets/images/cartoon_beam_projector_1785
 export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: 'monster_privacy_glass',
-    title: '몬스터 프리미엄 사생활보호 강화유리 필름 (2매)',
+    title: '몬스터 사생활보호 강화유리 필름 (2매)',
     category: 'digital',
     originalPrice: 25900,
     salePrice: 15900,
@@ -83,12 +83,12 @@ export const DEFAULT_PRODUCTS: Product[] = [
   },
   {
     id: 'honey_watermelon',
-    title: '07 국내산 당도선별 명품 꿀수박 8kg 이상 (1통)',
+    title: '07 고당도 씨없는 꿀 수박',
     category: 'food',
     originalPrice: 36500,
     salePrice: 21900,
     discountRate: 40,
-    coupangUrl: 'https://www.coupang.com/np/search?component=&q=%EC%88%98%EB%B0%95',
+    coupangUrl: 'https://link.coupang.com/a/fNN4oXskV2',
     imageUrl: koreanHoneyWatermelonImg,
     description: '산지직송 당도선별 명품 꿀수박! 비파괴 당도 측정으로 11 Brix 이상의 아삭하고 당도 높은 프리미엄 수박만을 엄선했습니다. 시원하고 풍부한 과즙과 달콤함으로 온 가족 여름 디저트로 추천드립니다.',
     isRocket: true,
@@ -152,7 +152,7 @@ export const DEFAULT_PRODUCTS: Product[] = [
     originalPrice: 22000,
     salePrice: 12900,
     discountRate: 41,
-    coupangUrl: 'https://www.coupang.com/np/search?component=&q=%EB%B9%94%ED%94%84%EB%A1%9C%EC%A0%9D%ED%84%B0',
+    coupangUrl: 'https://link.coupang.com/a/fNN8nsrNGS',
     imageUrl: cartoonBeamProjectorImg,
     description: '자동차, 전기차, 오토바이, 자전거 모두 사용 가능! 선명하고 선명한 LED 광원으로 바닥에 귀여운 캐릭터 빔을 쏘아주는 만화 빔 프로젝터입니다.',
     isRocket: true,
