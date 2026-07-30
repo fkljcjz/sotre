@@ -69,7 +69,6 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Product[];
-        // Filter out old default preset products (ids '1' to '9') to ensure a clean starting slate
         loadedProducts = parsed.filter(p => {
           const idNum = parseInt(p.id, 10);
           return isNaN(idNum) || idNum < 1 || idNum > 9;
@@ -79,43 +78,29 @@ export default function App() {
       }
     }
 
-    // Ensure default non-numeric products exist if not present, but preserve any edits made by the user
-    const nonNumericDefaults = DEFAULT_PRODUCTS.filter(p => isNaN(parseInt(p.id, 10)));
-    
-    // We reverse it to maintain their original relative order when prepending
-    for (const defaultProduct of [...nonNumericDefaults].reverse()) {
+    // Ensure all DEFAULT_PRODUCTS exist in loadedProducts
+    for (const defaultProduct of DEFAULT_PRODUCTS) {
       const hasProduct = loadedProducts.some(p => p.id === defaultProduct.id);
       if (!hasProduct) {
-        loadedProducts = [defaultProduct, ...loadedProducts];
+        loadedProducts.push(defaultProduct);
       }
     }
 
-    // Sync default metadata/links for preset items if placeholder or missing
+    // Combine preset default data with user modified data (user edits take precedence)
     loadedProducts = loadedProducts.map(p => {
       const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
       if (defaultMatch) {
-        const isPlaceholderUrl = !p.coupangUrl || p.coupangUrl.includes('honey_watermelon') || p.coupangUrl.includes('monster_privacy');
-        if (isPlaceholderUrl) {
-          return {
-            ...p,
-            coupangUrl: defaultMatch.coupangUrl
-          };
-        }
+        return {
+          ...defaultMatch,
+          ...p,
+          section: p.section || defaultMatch.section || 'popular',
+        };
       }
-      return p;
+      return {
+        ...p,
+        section: p.section || 'popular'
+      };
     });
-
-    // Position honey_watermelon right before green_apple_squishy (청사과 왁뿌볼)
-    const watermelonIdx = loadedProducts.findIndex(p => p.id === 'honey_watermelon');
-    if (watermelonIdx !== -1) {
-      const [watermelonItem] = loadedProducts.splice(watermelonIdx, 1);
-      const wakppuballIdx = loadedProducts.findIndex(p => p.id === 'green_apple_squishy');
-      if (wakppuballIdx !== -1) {
-        loadedProducts.splice(wakppuballIdx, 0, watermelonItem);
-      } else {
-        loadedProducts.unshift(watermelonItem);
-      }
-    }
 
     return loadedProducts;
   });
@@ -191,14 +176,14 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.name === '공식 패밀리 사이트' || parsed.name === 'Hapix 사이트') {
-          parsed.name = 'Hapix 공식 사이트';
+        if (parsed.name === '공식 패밀리 사이트' || parsed.name === 'Hapix 사이트' || parsed.name === 'Hapix 공식 사이트') {
+          parsed.name = 'Hapix';
         }
         return parsed;
       } catch (e) {}
     }
     return {
-      name: 'Hapix 공식 사이트',
+      name: 'Hapix',
       url: 'https://sotre.netlify.app/',
       desc: '더 많은 추천 정보와 유용한 소식 보러가기'
     };
@@ -215,7 +200,7 @@ export default function App() {
       url = 'https://' + url;
     }
     const updated = {
-      name: tempLinkName.trim() || 'Hapix 공식 사이트',
+      name: tempLinkName.trim() || 'Hapix',
       url: url || 'https://sotre.netlify.app/',
       desc: tempLinkDesc.trim() || '더 많은 추천 정보와 유용한 소식 보러가기'
     };
@@ -494,6 +479,7 @@ export default function App() {
       isRocket: true,
       isBest: false,
       tags: [],
+      section: 'popular'
     });
     setFormErrors({});
     setIsFormOpen(true);
@@ -543,7 +529,8 @@ export default function App() {
       isBest: !!formProduct.isBest,
       tags: formProduct.tags || [],
       createdAt: formProduct.createdAt || new Date().toISOString(),
-      topType: formProduct.topType || 'cost_effective'
+      topType: formProduct.topType || 'cost_effective',
+      section: formProduct.section || 'popular'
     };
 
     if (formProduct.id) {
@@ -974,7 +961,7 @@ export default function App() {
                 </div>
               </motion.button>
               <p className="text-[11px] font-extrabold text-[#2E1044]/90 mt-2.5 tracking-tight flex items-center gap-1 select-none">
-                {showTop10View ? '성능 또는 가성비에서 탑인 제품만 소개합니다' : '🔥 요즘 가장 인기 있는 아이템'}
+                {showTop10View && '성능 또는 가성비에서 탑인 제품만 소개합니다'}
               </p>
             </div>
           )}
@@ -1066,28 +1053,77 @@ export default function App() {
               )}
             </motion.div>
           ) : (
-            /* Main Product Grid */
-            <div className="space-y-4">
-              {sortedProducts.length > 0 ? (
-                <div className="px-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    {sortedProducts.map(product => renderProductCard(product))}
+            /* Main Product Grid categorized into 2 sections */
+            <div className="space-y-6">
+              {searchQuery ? (
+                /* Search Results View */
+                <div className="space-y-3">
+                  <div className="px-4 text-xs font-black text-[#2E1044] flex items-center justify-between">
+                    <span>🔍 "{searchQuery}" 검색 결과 ({sortedProducts.length}개)</span>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 px-4 bg-white mx-4 rounded-2xl border border-purple-100 shadow-sm">
-                  <AlertTriangle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <h3 className="text-xs font-bold text-slate-800">원하시는 조건의 상품이 없습니다</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">검색어를 바꾸거나 다시 시도해 보세요.</p>
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="mt-3 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-lg transition"
-                    >
-                      검색 초기화
-                    </button>
+                  {sortedProducts.length > 0 ? (
+                    <div className="px-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        {sortedProducts.map(product => renderProductCard(product))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 px-4 bg-white mx-4 rounded-2xl border border-purple-100 shadow-xs">
+                      <AlertTriangle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <h3 className="text-xs font-bold text-slate-800">원하시는 조건의 상품이 없습니다</h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">검색어를 바꾸거나 다시 시도해 보세요.</p>
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="mt-3 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-lg transition cursor-pointer"
+                      >
+                        검색 초기화
+                      </button>
+                    </div>
                   )}
                 </div>
+              ) : (
+                /* Main 2-Category Layout */
+                <>
+                  {/* Category 1: 요즘 가장 인기 있는 아이템 */}
+                  <div className="space-y-2.5">
+                    <div className="text-center">
+                      <h2 className="text-xs font-black text-[#2E1044] tracking-tight inline-flex items-center gap-1 select-none">
+                        🔥 요즘 가장 인기 있는 아이템
+                      </h2>
+                    </div>
+                    {sortedProducts.filter(p => (p.section || 'popular') === 'popular').length > 0 ? (
+                      <div className="px-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {sortedProducts.filter(p => (p.section || 'popular') === 'popular').map(product => renderProductCard(product))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 px-4 bg-white/60 mx-4 rounded-xl border border-purple-100 text-[11px] font-semibold text-slate-400">
+                        등록된 인기 아이템이 없습니다.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Category 2: 유명인들이 추천하는 상품 */}
+                  <div className="space-y-2.5 pt-3 border-t border-purple-100/60">
+                    <div className="text-center">
+                      <h2 className="text-xs font-black text-[#2E1044] tracking-tight inline-flex items-center gap-1 select-none">
+                        ⭐ 유명인들이 추천하는 상품 ⭐
+                      </h2>
+                    </div>
+                    {sortedProducts.filter(p => p.section === 'celeb').length > 0 ? (
+                      <div className="px-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {sortedProducts.filter(p => p.section === 'celeb').map(product => renderProductCard(product))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 px-4 bg-white/60 mx-4 rounded-xl border border-purple-100 text-[11px] font-semibold text-slate-400">
+                        등록된 유명인 추천 상품이 없습니다.
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -1508,6 +1544,35 @@ export default function App() {
                   />
                 </div>
 
+                {/* Category Section Group */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1.5">노출 카테고리 섹션</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormProduct({ ...formProduct, section: 'popular' })}
+                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                        (formProduct.section || 'popular') === 'popular'
+                          ? 'bg-purple-900 text-white border-purple-900 shadow-xs'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>🔥 요즘 인기 아이템</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormProduct({ ...formProduct, section: 'celeb' })}
+                      className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                        formProduct.section === 'celeb'
+                          ? 'bg-purple-900 text-white border-purple-900 shadow-xs'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>⭐ 유명인 추천 상품</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Description */}
                 {!formProduct.id && (
                   <div>
@@ -1755,7 +1820,7 @@ export default function App() {
                     type="text"
                     value={tempLinkName}
                     onChange={(e) => setTempLinkName(e.target.value)}
-                    placeholder="예: Hapix 공식 사이트, 내 블로그"
+                    placeholder="예: Hapix, 내 블로그"
                     className="w-full bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     required
                   />

@@ -18,6 +18,7 @@ export interface Product {
   tags: string[];
   createdAt: string;
   topType?: 'cost_effective' | 'performance' | 'both'; // 가성비 vs 성능 구분
+  section?: 'popular' | 'celeb'; // 'popular' = 요즘 가장 인기있는 아이템, 'celeb' = 유명인들이 추천하는 상품
 }
 
 export const CATEGORIES = [
